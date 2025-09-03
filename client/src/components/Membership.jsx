@@ -126,14 +126,24 @@ export default function Membership() {
     try {
       if (mode === "signup") {
         await signup({
-          name: signupUsername,
+          username: signupUsername,
           email: signupEmail,
           password: signupPassword,
         });
+        setAuthError(
+          "Account 👌👌🤩🤩 Created Successfully 🤩🤩 👌👌 You can Login now 🤞😎🎶"
+        );
+        // Clear signup fields
+        setSignupUsername("");
+        setSignupEmail("");
+        setSignupPassword("");
+        setSignupConfirm("");
+        setMode("login");
       } else {
-        await login({ identifier: loginUsername, password: loginPassword });
+        await login({ username: loginUsername, password: loginPassword });
+        navigate("/profile", { replace: true });
       }
-      navigate("/profile", { replace: true });
+      // navigate("/Membership", { replace: true });
     } catch (err) {
       setAuthError(err.response?.data?.message || "Authentication failed");
     } finally {
