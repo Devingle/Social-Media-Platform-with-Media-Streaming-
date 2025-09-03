@@ -1,2 +1,3 @@
-export { default as Landing } from "../components/LandingPage.jsx";
-export { default as Membership } from "../components/MembershipPage.jsx";
+export { default as Landing } from "../components/Landing.jsx";
+export { default as Membership } from "../components/Membership.jsx";
+export { default as ProtectedRoute } from "../components/ProtectedRoute.jsx";
