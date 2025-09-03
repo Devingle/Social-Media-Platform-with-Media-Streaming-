@@ -13,37 +13,43 @@ const createToken = (user) =>
 
 // Signup
 router.post("/signup", async (req, res) => {
-  const { name, email, password } = req.body;
-  if (!name || !email || !password)
-    return res.status(400).json({ message: "All fields are required" });
+  try {
+    const { username, email, password } = req.body;
+    if (!username || !email || !password)
+      return res.status(400).json({ message: "All fields are required" });
 
-  const exists = await User.findOne({ $or: [{ email }, { name }] });
-  if (exists)
-    return res.status(400).json({ message: "Email or username already used" });
+    const exists = await User.findOne({ $or: [{ email }, { username }] });
+    if (exists)
+      return res
+        .status(400)
+        .json({ message: "Email or username already used" });
 
-  const passwordHash = await bcrypt.hash(password, 10);
-  const user = await User.create({ name, email, password: passwordHash });
+    const passwordHash = await bcrypt.hash(password, 10);
+    const user = await User.create({ username, email, password: passwordHash });
 
-  const token = createToken(user);
-  res
-    .cookie("token", token, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    })
-    .status(201)
-    .json({ id: user._id, name: user.name, email: user.email });
+    const token = createToken(user);
+    res
+      .cookie("token", token, {
+        httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      })
+      .status(201)
+      .json({ id: user._id, username: user.username, email: user.email });
+  } catch (err) {
+    res.status(500).json({ message: "Error: " + err.message });
+  }
 });
 
 // Login
 router.post("/login", async (req, res) => {
-  const { identifier, password } = req.body;
-  if (!identifier || !password)
+  const { username, password } = req.body;
+  if (!username || !password)
     return res.status(400).json({ message: "All fields are required" });
 
   const user = await User.findOne({
-    $or: [{ email: identifier }, { name: identifier }],
+    $or: [{ email: username }, { username: username }],
   });
   if (!user) return res.status(401).json({ message: "Invalid credentials" });
 
@@ -59,7 +65,7 @@ router.post("/login", async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000,
     })
     .status(200)
-    .json({ id: user._id, name: user.name, email: user.email });
+    .json({ id: user._id, username: user.username, email: user.email });
 });
 
 // Get profile
