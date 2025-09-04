@@ -105,6 +105,7 @@ router.post("/signup", async (req, res) => {
 });
 
 // Resend verification code with rate limiting
+// Resend verification code with rate limiting, countdown, and daily attempts
 router.post("/resend-code", async (req, res) => {
   const { email } = req.body;
   const user = await User.findOne({ email });
@@ -115,29 +116,40 @@ router.post("/resend-code", async (req, res) => {
 
   const now = new Date();
 
-  // ✅ 1-minute cooldown
-  if (user.lastResendAt && now - user.lastResendAt < 60 * 1000) {
-    return res
-      .status(429)
-      .json({ message: "Please wait before requesting again." });
-  }
-
-  // ✅ Daily limit (5 per day)
+  // Daily limit (5 per day)
   const today = new Date();
-  today.setHours(0, 0, 0, 0); // reset to start of today
+  today.setHours(0, 0, 0, 0); // start of today
   if (!user.lastResendAt || user.lastResendAt < today) {
     user.resendCount = 0; // reset daily count
   }
-  if (user.resendCount >= 5) {
-    return res
-      .status(429)
-      .json({ message: "Daily resend limit reached. Try again tomorrow." });
+  const dailyLimit = 5;
+  const remainingDaily = dailyLimit - (user.resendCount || 0);
+  if (remainingDaily <= 0) {
+    return res.status(429).json({
+      message: "Daily resend limit reached. Try again tomorrow.",
+      remainingDaily: 0,
+    });
   }
+
+  // 1-minute cooldown
+  if (user.lastResendAt && now - user.lastResendAt < 60 * 1000) {
+    const secondsLeft = Math.ceil(
+      (60 * 1000 - (now - user.lastResendAt)) / 1000
+    );
+    return res.status(429).json({
+      message: `Please wait ${secondsLeft} second${
+        secondsLeft > 1 ? "s" : ""
+      } before requesting again.`,
+      cooldown: secondsLeft,
+      remainingDaily,
+    });
+  }
+
   // Generate a new code
   const newCode = crypto.randomInt(100000, 999999).toString();
   user.verificationCode = newCode;
   user.lastResendAt = now;
-  user.resendCount += 1;
+  user.resendCount = (user.resendCount || 0) + 1;
   await user.save();
 
   // Send new OTP email
@@ -149,7 +161,10 @@ router.post("/resend-code", async (req, res) => {
 
   console.log("🔁 Resent OTP code for", email, "is", newCode);
 
-  res.json({ message: "New verification code sent to your email" });
+  res.json({
+    message: "New verification code sent to your email",
+    remainingDaily: dailyLimit - user.resendCount,
+  });
 });
 
 /**
