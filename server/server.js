@@ -1,3 +1,5 @@
+import dotenv from "dotenv";
+dotenv.config();
 /*Starts the server.
 
 Loads middleware (CORS, cookieParser, express.json).
@@ -5,14 +7,13 @@ Loads middleware (CORS, cookieParser, express.json).
 Connects MongoDB (from config/db.js).
 
 Uses routes from routes.*/
+
 import express from "express";
-import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/auth.js";
 
-dotenv.config();
 const app = express();
 
 // Middleware
