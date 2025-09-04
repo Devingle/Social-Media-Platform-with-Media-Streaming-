@@ -1,9 +1,10 @@
 // src/membership/Membership.jsx
 import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { signup, login, getProfile } from "../api/auth";
 import bgImage from "/Login-SignUp-Background-Image.png";
 import avatarImage from "/Avatar-Image.png";
+import { Link } from "react-router-dom";
 
 const validateEmail = (email) =>
   /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
@@ -67,6 +68,15 @@ export default function Membership() {
   const [errors, setErrors] = useState({});
 
   const navigate = useNavigate();
+  const location = useLocation();
+  const successMsg = location.state?.successMsg || "";
+  // ✅ Auto-clear banner after 5s
+  useEffect(() => {
+    if (successMsg) {
+      const timer = setTimeout(() => setSuccessMsg(""), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [successMsg]);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -77,6 +87,12 @@ export default function Membership() {
     };
     checkAuth();
   }, [navigate]);
+
+  useEffect(() => {
+    if (location.state?.successMsg) {
+      navigate(location.pathname, { replace: true, state: {} }); // clear state after reading once
+    }
+  }, [location, navigate]);
 
   useEffect(() => {
     const styleEl = document.createElement("style");
@@ -113,6 +129,23 @@ export default function Membership() {
     ]
   );
 
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    try {
+      await login({ username: loginUsername, password: loginPassword });
+      navigate("/profile"); // ✅ normal login success
+    } catch (err) {
+      const msg = err.response?.data?.message || "Login failed";
+
+      // ✅ If backend says "Please verify your email first."
+      if (err.response?.status === 403) {
+        navigate("/verify-email", { state: { email: loginUsername } });
+      } else {
+        setLoginError(msg); // your existing error state
+      }
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (processing) return;
@@ -130,9 +163,9 @@ export default function Membership() {
           email: signupEmail,
           password: signupPassword,
         });
-        setAuthError(
-          "Account 👌👌🤩🤩 Created Successfully 🤩🤩 👌👌 You can Login now 🤞😎🎶"
-        );
+        // Navigate to verify-email page
+        navigate("/verify-email", { state: { email: signupEmail } });
+
         // Clear signup fields
         setSignupUsername("");
         setSignupEmail("");
@@ -170,6 +203,19 @@ export default function Membership() {
               className="avatar throbbing-avatar"
             />
             <h2 className="title">Welcome to StreamifyAi</h2>
+
+            {successMsg && (
+              <div
+                className="banner"
+                style={{
+                  background: "rgba(107,255,107,0.12)",
+                  border: "1px solid rgba(107,255,107,0.35)",
+                  color: "#baffba",
+                }}
+              >
+                {successMsg}
+              </div>
+            )}
 
             {authError && <div className="banner">{authError}</div>}
 
@@ -224,6 +270,18 @@ export default function Membership() {
                 setShowPassword={setShowPassword}
                 hidden={mode !== "login"}
               />
+
+              {/* ✅ Add Forgot Password link */}
+              {mode === "login" && (
+                <div style={{ textAlign: "right", marginTop: "6px" }}>
+                  <Link
+                    to="/forgot-password"
+                    style={{ color: "#7ecbff", fontSize: "14px" }}
+                  >
+                    Forgot Password?
+                  </Link>
+                </div>
+              )}
 
               <InputField
                 id="signup-username"
