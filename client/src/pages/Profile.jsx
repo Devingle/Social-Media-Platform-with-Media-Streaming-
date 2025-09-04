@@ -1,6 +1,10 @@
+// client/src/pages/Profile.jsx
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getProfile, logout } from "../api/auth";
+import avatarImage from "/Avatar-Image.png";
+import bgImage from "/Login-SignUp-Background-Image.png";
+import "../styles/authPages.css";
 
 export default function Profile() {
   const [user, setUser] = useState(null);
@@ -26,41 +30,64 @@ export default function Profile() {
     navigate("/membership");
   };
 
-  if (loading) return <div style={{ padding: 40 }}>Loading profile...</div>;
+  if (loading) {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "grid",
+          placeItems: "center",
+          color: "#d8e8ff",
+          fontSize: "18px",
+        }}
+      >
+        Loading profile...
+      </div>
+    );
+  }
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        padding: 40,
-        fontFamily: "Segoe UI, sans-serif",
-      }}
-    >
-      {user && (
-        <div style={{ maxWidth: 500, margin: "0 auto", textAlign: "center" }}>
-          <h1 style={{ fontSize: 28, color: "#7ecbff" }}>
-            Welcome, {user.name}!
-          </h1>
-          <p style={{ fontSize: 16, color: "#ddeeff" }}>Email: {user.email}</p>
-          <p style={{ fontSize: 16, color: "#ddeeff" }}>User ID: {user.id}</p>
-          <button
-            onClick={handleLogout}
-            style={{
-              marginTop: 30,
-              padding: "12px 24px",
-              fontSize: 16,
-              fontWeight: "bold",
-              color: "#fff",
-              background: "#ff3366",
-              border: "none",
-              borderRadius: 8,
-              cursor: "pointer",
-            }}
-          >
-            Logout
-          </button>
+    <div className="page-root">
+      <div className="bg">
+        <img src={bgImage} alt="" />
+        <div className="bg-blur" />
+      </div>
+
+      <div className="wrap">
+        <div className="circle-card throbbing">
+          <div className="ring" />
+          <div className="content">
+            <img src={avatarImage} alt="Avatar" className="avatar" />
+            <h2 className="title">
+              Welcome, {user?.name || user?.username || "Guest"}!
+            </h2>
+
+            <div
+              style={{
+                fontSize: "15px",
+                color: "#cfe0ff",
+                textAlign: "center",
+                marginBottom: "12px",
+              }}
+            >
+              <p>Email: {user?.email}</p>
+              <p>User ID: {user?.id || user?._id}</p>
+            </div>
+
+            <button
+              className="cta"
+              style={{
+                background: "linear-gradient(180deg,#ff3366,#cc0044)",
+                color: "#fff",
+                fontWeight: "800",
+              }}
+              onClick={handleLogout}
+            >
+              Logout
+            </button>
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
